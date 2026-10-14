@@ -1,0 +1,53 @@
+# Ambientes Virtuais (Virtual Environments)
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Arquivos de Configuração Sensíveis (Chaves de API e Segredos)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Cache do Python e Arquivos Compilados
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Configurações de IDEs e Editores de Código
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# Logs e Dados Temporários
+*.log
+logs/
+*.sqlite
+*.sqlite3
+*.db
+
+# Bancos de Dados Vetoriais Locais / Cache de Memória
+chroma_db/
+.faiss/
+vector_store/
+
+# Cobertura de Testes e Cache de Ferramentas (Pytest, Mypy, etc.)
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Arquivos do Sistema Operacional
+.DS_Store
+Thumbs.db
