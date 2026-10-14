@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detector de Fake News · RAG</title>
+<style>
+  :root {
+    --bg: #0f1419; --card: #1a212b; --text: #e8edf3; --muted: #8a97a8;
+    --accent: #4f9cff; --user: #24476e; --border: #2a3441;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f3f5f8; --card: #ffffff; --text: #1a212b; --muted: #5d6b7c;
+            --accent: #1f6fe0; --user: #dbe9ff; --border: #d9e0e8; }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg);
+         color: var(--text); height: 100vh; display: flex; justify-content: center; }
+  main { width: 100%; max-width: 760px; display: flex; flex-direction: column; padding: 20px; gap: 14px; }
+  header h1 { font-size: 1.4rem; }
+  header p { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+  #chat { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+          padding: 4px 2px; }
+  .msg { max-width: 88%; padding: 12px 14px; border-radius: 14px; line-height: 1.5;
+         white-space: pre-wrap; border: 1px solid var(--border); background: var(--card); }
+  .msg.user { align-self: flex-end; background: var(--user); }
+  .msg.bot { align-self: flex-start; }
+  .fontes { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: .72rem; padding: 3px 9px; border-radius: 99px; color: var(--accent);
+          border: 1px solid var(--accent); }
+  .sugestoes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sugestoes button { background: transparent; color: var(--accent); border: 1px solid var(--border);
+          padding: 6px 12px; border-radius: 99px; cursor: pointer; font-size: .82rem; }
+  .sugestoes button:hover { border-color: var(--accent); }
+  form { display: flex; gap: 8px; }
+  input { flex: 1; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--border);
+          background: var(--card); color: var(--text); font-size: 1rem; }
+  input:focus { outline: 2px solid var(--accent); }
+  form button { padding: 0 20px; border: 0; border-radius: 12px; background: var(--accent);
+          color: #fff; font-weight: 600; cursor: pointer; }
+  form button:disabled { opacity: .5; cursor: not-allowed; }
+  footer { color: var(--muted); font-size: .75rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>🔎 Detector de Fake News</h1>
+    <p>Assistente com RAG: respostas baseadas em uma base de conhecimento, com fontes citadas.</p>
+  </header>
+
+  <div class="sugestoes" id="sugestoes">
+    <button>O que é fake news?</button>
+    <button>O que é o método SIFT?</button>
+    <button>Como saber se uma imagem é falsa?</button>
+    <button>Onde checar uma notícia no Brasil?</button>
+  </div>
+
+  <div id="chat">
+    <div class="msg bot">Olá! Pergunte o que é fake news ou como identificá-las. Eu ensino o método de checagem, mas não julgo se uma notícia específica é verdadeira ou falsa.</div>
+  </div>
+
+  <form id="form">
+    <input id="input" placeholder="Digite sua pergunta..." autocomplete="off" required>
+    <button id="enviar" type="submit">Enviar</button>
+  </form>
+  <footer>Python · FastAPI · RAG com TF-IDF · API da Anthropic</footer>
+</main>
+
+<script>
+  const chat = document.getElementById("chat");
+  const form = document.getElementById("form");
+  const input = document.getElementById("input");
+  const enviar = document.getElementById("enviar");
+
+  function addMsg(texto, tipo, fontes = []) {
+    const div = document.createElement("div");
+    div.className = "msg " + tipo;
+    div.textContent = texto;
+    if (fontes.length) {
+      const box = document.createElement("div");
+      box.className = "fontes";
+      fontes.forEach(f => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = "📚 " + f;
+        box.appendChild(chip);
+      });
+      div.appendChild(box);
+    }
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  async function perguntar(pergunta) {
+    addMsg(pergunta, "user");
+    const carregando = addMsg("Pesquisando na base de conhecimento...", "bot");
+    enviar.disabled = true;
+    try {
+      const res = await fetch("/perguntar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pergunta })
+      });
+      if (!res.ok) throw new Error("Erro " + res.status);
+      const data = await res.json();
+      carregando.remove();
+      addMsg(data.resposta, "bot", data.fontes);
+    } catch (e) {
+      carregando.textContent = "Não consegui responder agora. Verifique se o servidor está rodando e se a ANTHROPIC_API_KEY está configurada.";
+    } finally {
+      enviar.disabled = false;
+    }
+  }
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const p = input.value.trim();
+    if (!p) return;
+    input.value = "";
+    perguntar(p);
+  });
+
+  document.querySelectorAll("#sugestoes button").forEach(b =>
+    b.addEventListener("click", () => perguntar(b.textContent))
+  );
+</script>
+</body>
+</html>
